@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checklist Faixa Azul</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: dojo direto, como a ficha de exame do professor — firme, limpo, sem enfeite
+   IDEA: a própria faixa azul — a barra de progresso é a faixa, a ponta preta recebe os graus
+   PICTURE: faixa desenhada em SVG que vai se tingindo de azul conforme os itens são marcados
+   COLOUR and TYPE: azul royal de faixa, preto da ponteira, branco do kimono; Barlow Condensed + Barlow
+   LAYOUT: cabeçalho azul com a faixa, lista em cartões por bloco; impressão A4 em duas colunas */
+:root{color-scheme:light dark;
+ --bg:light-dark(#f4f6fa,#0b1220);--card:light-dark(#fff,#121b2e);--ink:light-dark(#0c1424,#e9eef8);
+ --mute:light-dark(#5a6478,#93a0b8);--line:light-dark(#dde3ee,#22304a);
+ --blue:#1d5fd1;--blue2:#123f92;--done:light-dark(#e9f0fd,#14264a)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Barlow,system-ui,sans-serif;overflow-x:clip}
+h1,h2,.num{font-family:"Barlow Condensed",Barlow,sans-serif}
+header{background:linear-gradient(160deg,var(--blue),var(--blue2));color:#fff;padding:28px max(5vw,16px) 22px}
+.wrap{max-width:860px;margin:0 auto}
+.kick{font-size:14px;opacity:.85;margin:0}
+h1{font-size:clamp(34px,7vw,48px);line-height:1.05;margin:4px 0 18px;font-weight:700}
+.belt{width:100%;height:auto;display:block;filter:drop-shadow(0 6px 10px rgba(0,0,0,.25))}
+.stats{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:baseline;margin-top:14px}
+.big{font-family:"Barlow Condensed";font-size:40px;font-weight:700;line-height:1}
+.stats span{font-size:15px;opacity:.9}
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;padding:10px max(5vw,16px)}
+.tools .wrap{display:flex;flex-wrap:wrap;gap:8px;width:100%}
+button,.tog{font:600 15px Barlow,sans-serif;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+button:focus-visible,.item:focus-visible,.pip:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+button[aria-pressed=true]{background:var(--blue);border-color:var(--blue);color:#fff}
+.spacer{flex:1}
+main{padding:18px max(5vw,16px) 60px}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:0 0 14px;overflow:hidden}
+.sh{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.sh .num{background:#0c0c0c;color:#fff;font-size:20px;font-weight:700;width:38px;height:38px;border-radius:8px;display:grid;place-items:center;flex:none}
+.sh h2{margin:0;font-size:22px;font-weight:700;flex:1;line-height:1.1}
+.sh small{font:600 14px Barlow;color:var(--mute);white-space:nowrap}
+section.full .sh .num{background:var(--blue)}
+.item{display:flex;gap:12px;align-items:flex-start;padding:12px 16px;border-top:1px solid var(--line);cursor:pointer;user-select:none}
+.item:first-of-type{border-top:0}
+.item.ok{background:var(--done)}
+.box{width:26px;height:26px;border:2px solid var(--mute);border-radius:7px;flex:none;display:grid;place-items:center;margin-top:1px;transition:background .15s,border-color .15s}
+.ok .box{background:var(--blue);border-color:var(--blue)}
+.box svg{width:16px;height:16px;opacity:0}.ok .box svg{opacity:1}
+.txt{flex:1}.code{font-weight:600;color:var(--mute);margin-right:6px}
+.ok .t{text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--ink) 40%,transparent)}
+.slots{display:grid;gap:8px;margin-top:10px}
+.slot{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pip{min-width:44px;height:44px;border-radius:9px;border:2px solid var(--line);background:transparent;color:var(--mute);font:600 15px Barlow;padding:0 10px;cursor:pointer;flex:none}
+.pip.on{background:var(--blue);border-color:var(--blue);color:#fff}
+select,.oth{flex:1 1 200px;min-height:44px;font:500 16px Barlow,sans-serif;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:0 12px}
+select:focus-visible,.oth:focus-visible{outline:3px solid var(--blue);outline-offset:1px}
+select.set{border-color:var(--blue);background:var(--done);font-weight:600}
+.oth{flex-basis:100%}
+.pv{display:none}
+.hide-done .item.ok{display:none}.hide-done section.full{display:none}
+.empty{display:none;text-align:center;color:var(--mute);padding:30px}
+.hide-done.all .empty{display:block}
+.dlg{position:fixed;inset:0;background:rgba(5,10,20,.55);display:none;place-items:center;padding:20px;z-index:20}
+.dlg.open{display:grid}
+.dlg div{background:var(--card);border-radius:14px;padding:22px;max-width:360px}
+.dlg p{margin:0 0 16px}.dlg .row{display:flex;gap:8px;justify-content:flex-end;padding:0;background:none}
+.danger{background:#c62828;border-color:#c62828;color:#fff}
+.note{font-size:14px;color:var(--mute);margin:18px 0 0}
+.printonly{display:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media(max-width:600px){.sh h2{font-size:20px}.tools button{flex:1 1 auto;justify-content:center}.spacer{display:none}}
+@page{size:A4;margin:12mm}
+@media print{
+ :root{color-scheme:light;--bg:#fff;--card:#fff;--ink:#000;--mute:#444;--line:#bbb;--done:#fff}
+ body{font-size:11.5pt}
+ header{background:#fff;color:#000;padding:0 0 6px;border-bottom:3px solid #000}
+ header .belt,.stats,.bar,.dlg,.note,.empty{display:none!important}
+ h1{font-size:24pt;margin:0 0 4px}.kick{opacity:1}
+ .printonly{display:flex;gap:18px;margin:8px 0 2px;font-size:10.5pt}
+ .printonly span{flex:1;border-bottom:1px solid #000;padding-bottom:2px}
+ main{padding:10px 0 0;columns:2;column-gap:8mm}
+ section{break-inside:avoid;border:1px solid #999;border-radius:6px;margin:0 0 3.5mm}
+ .sh{padding:5px 8px;background:#eef2fa!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ .sh .num{width:24px;height:24px;font-size:14pt;border-radius:4px;background:#000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ .sh h2{font-size:13pt}.sh small{display:none}
+ .item{padding:5px 8px;gap:8px}
+ .box{width:15px;height:15px;border:1.5px solid #000;border-radius:3px}
+ .box svg{width:11px;height:11px}
+ .slots{gap:2px;margin-top:3px}.slot{gap:5px;flex-wrap:nowrap;align-items:baseline}
+ .pip{min-width:0;height:auto;padding:0 5px;border:1.5px solid #000;border-radius:3px;color:#000;font-size:8.5pt;background:#fff!important}
+ select,.oth{display:none!important}
+ .pv{display:block;flex:1;font-size:10.5pt;border-bottom:1px solid #999;min-height:15pt;font-weight:600}
+ .hide-done .item.ok,.hide-done section.full{display:flex}.hide-done section.full{display:block}
+ .ok .t{text-decoration:none}
+ body.blank .box svg{opacity:0}body.blank .pip.on{color:#000}
+ body:not(.blank) .ok .box{background:#000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ body:not(.blank) .pip.on{background:#000!important;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ body.blank .ok .box{background:#fff!important}
+}
+</style>
+</head>
+<body class="blank">
+<header><div class="wrap">
+ <p class="kick">2ª etapa · Parte prática</p>
+ <h1>Exame de Faixa Azul</h1>
+ <svg class="belt" viewBox="0 0 800 90" role="img" aria-label="Progresso na faixa">
+  <defs>
+   <linearGradient id="sh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></linearGradient>
+   <clipPath id="cl"><rect x="0" y="20" width="800" height="50" rx="6"/></clipPath>
+  </defs>
+  <g clip-path="url(#cl)">
+   <rect x="0" y="20" width="800" height="50" fill="#0a2a66" opacity=".55"/>
+   <rect id="fill" x="0" y="20" width="0" height="50" fill="#2f7bff"/>
+   <g stroke="#fff" stroke-opacity=".22" stroke-width="1.2">
+    <line x1="0" y1="30" x2="800" y2="30"/><line x1="0" y1="40" x2="800" y2="40"/><line x1="0" y1="50" x2="800" y2="50"/><line x1="0" y1="60" x2="800" y2="60"/>
+   </g>
+   <rect x="610" y="20" width="150" height="50" fill="#0c0c0c"/>
+   <g id="graus"></g>
+   <rect x="0" y="20" width="800" height="50" fill="url(#sh)"/>
+  </g>
+ </svg>
+ <div class="stats"><div class="big" id="pct">0%</div><span id="cnt"></span><span id="sec"></span></div>
+</div></header>
+
+<div class="bar"><div class="tools"><div class="wrap">
+ <button id="fDone" aria-pressed="false">Só pendentes</button>
+ <button id="fBlank" aria-pressed="true" title="Define como a folha sai na impressão">Imprimir em branco</button>
+ <span class="spacer"></span>
+ <button id="reset">Zerar</button>
+</div></div></div>
+
+<main class="wrap" id="list">
+ <div class="printonly"><span>Nome:</span><span>Data:</span><span>Professor:</span></div>
+</main>
+<p class="wrap note" style="padding:0 max(5vw,16px) 40px">Toque no item para marcar. Escolha o golpe de cada técnica na lista (ou "Outro" para escrever o seu). Nos itens com quantidade, marque cada número quando dominar aquele golpe. Para imprimir, use o menu do navegador (Imprimir / Compartilhar → Imprimir); a folha sai em A4, duas colunas.</p>
+
+<div class="dlg" id="dlg"><div>
+ <p>Zerar todo o checklist? As marcações serão apagadas.</p>
+ <div class="row"><button id="no">Cancelar</button><button class="danger" id="yes">Zerar</button></div>
+</div></div>
+
+<script>
+{
+const O={
+ rep:["Fuga de quadril com joelho","Enquadrar e fugir o quadril","Inversão (giro de ombro)","Pé no quadril e reposição"],
+ q4:["Saída clássica","Braço / escorrega","Rolamento por baixo (granby)","Sentar para a guarda"],
+ gf:["Tesoura","Pêndulo","Raspagem de quadril (hip bump)","Raspagem da Kimura","Raspagem do tornozelo"],
+ gp:["Tripé","Balão","Foice (sickle)","De la Riva","Gancho com pé no quadril"],
+ gj:["Aranha","Borboleta (gancho)","Guarda X","Single X"],
+ fin:["Kimura","Estrangulamento cruzado (cross choke)","Armlock","Triângulo","Omoplata","Guilhotina"],
+ pas:["Knee cut","Toreando","Emborcada (empilhando)","Over-under","Leg drag"],
+ meia:["Cabeça na axila (underhook)","Crossface e tirar o joelho","Knee slice da meia guarda","Passar para os 100 kg"],
+ chv:["Americana","Kimura","Armlock"],
+ est:["Katagatame","Roger Gracie","Ezequiel","Estrangulamento cruzado","Estrangulamento com a lapela"],
+ mon:["Ezequiel","Amassa pão","Americana","Armlock","Estrangulamento cruzado","Katagatame"],
+ cos:["Mata-leão","Arco e flecha","Estrangulamento com a gola","Armlock das costas"],
+ qq:["O-goshi","Harai-goshi","Koshi-guruma","Sode-tsurikomi-goshi (manga)","Tsurikomi-goshi","Uki-goshi"],
+ qp:["Baiana (double leg)","Single leg","O-soto-gari","O-uchi-gari","Ko-uchi-gari"]
+};
+const D=[
+ ["Fundamentos",[["1.1","Rolamento de costas"],["1.2","Rolamento de frente"],["1.3","Fuga de quadril"],["1.4","Levantada técnica"]]],
+ ["Defesa pessoal",[["2.1","Gravata por trás"],["2.2","Defesa de tapa"],["2.3","Saída de gravata lateral"]]],
+ ["Saídas de baixo",[["3.1","Barrigada"],["3.2","Saída de cotovelo"],["3.3","Saída das costas"],["3.4","Reposição de guarda",1,"rep"],["3.5","Virada de quatro",1,"q4"]]],
+ ["Raspagens",[["4.1","Duas raspagens de guarda fechada",2,"gf"],["4.2","Duas raspagens de guarda aberta com o adversário em pé",2,"gp"],["4.3","Raspagem de guarda aberta com o adversário de joelhos",1,"gj"]]],
+ ["Ataques na guarda",[["5.1","Quatro finalizações na guarda",4,"fin"]]],
+ ["Passagem",[["6.1","Postura"],["6.2","Três passagens de guarda em situações diferentes",3,"pas"],["6.3","Domínio e passagem de meia guarda",1,"meia"]]],
+ ["Ataques laterais",[["7.1","Duas chaves de braço",2,"chv"],["7.2","Dois estrangulamentos",2,"est"]]],
+ ["Montada",[["8.1","Três ataques",3,"mon"]]],
+ ["Pegada pelas costas",[["9.1","Dois ataques",2,"cos"]]],
+ ["Quedas",[["10.1","Duas quedas de quadril",2,"qq"],["10.2","Duas quedas de perna",2,"qp"]]]
+];
+const KEY="faixa-azul-v2";
+let S={};try{S=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){S={}}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const chk='<svg viewBox="0 0 16 16"><path d="M3 8.5l3 3 7-7" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const n=it=>it[2]||1;
+const st=it=>{let v=S[it[0]];if(!v||typeof v!=="object"||Array.isArray(v))v=S[it[0]]={c:[],t:[],o:[]};v.c=v.c||[];v.t=v.t||[];v.o=v.o||[];return v};
+const isOk=it=>{const v=st(it);for(let k=0;k<n(it);k++)if(!v.c[k])return false;return true};
+const slot=(it,k)=>`<div class="slot" data-k="${k}">${n(it)>1?`<button class="pip" data-k="${k}" aria-pressed="false" aria-label="Marcar técnica ${k+1}">${k+1}</button>`:""}<select data-k="${k}" aria-label="Golpe ${k+1} de ${esc(it[1])}"><option value="">Escolher golpe…</option>${O[it[3]].map(o=>`<option>${esc(o)}</option>`).join("")}<option value="__o">Outro (escrever)…</option></select><input class="oth" data-k="${k}" placeholder="Escreva o golpe" hidden><span class="pv"></span></div>`;
+const list=document.getElementById("list");
+list.insertAdjacentHTML("beforeend",D.map((s,i)=>`<section data-s="${i}"><div class="sh"><div class="num">${i+1}</div><h2>${s[0]}</h2><small></small></div>${
+ s[1].map(it=>`<div class="item" tabindex="0" role="checkbox" data-id="${it[0]}"><div class="box">${chk}</div><div class="txt"><span class="code">${it[0]}</span><span class="t">${it[1]}</span>${
+  it[3]?`<div class="slots">${Array.from({length:n(it)},(_,k)=>slot(it,k)).join("")}</div>`:""}</div></div>`).join("")}</section>`).join("")+
+ '<div class="empty">Tudo marcado. Oss!</div>');
+const find=id=>{for(const s of D)for(const it of s[1])if(it[0]===id)return it};
+const grausG=document.getElementById("graus");
+function render(){
+ let tot=0,done=0,secs=0;
+ D.forEach((s,i)=>{
+  const el=list.querySelector(`section[data-s="${i}"]`);let sd=0;
+  s[1].forEach(it=>{
+   const row=el.querySelector(`[data-id="${it[0]}"]`),ok=isOk(it),v=st(it);
+   row.classList.toggle("ok",ok);row.setAttribute("aria-checked",ok);
+   row.querySelectorAll(".slot").forEach(sl=>{
+    const k=+sl.dataset.k,p=sl.querySelector(".pip"),se=sl.querySelector("select"),ot=sl.querySelector(".oth");
+    if(p){const on=!!v.c[k];p.classList.toggle("on",on);p.setAttribute("aria-pressed",on)}
+    const t=v.t[k]||"";se.value=t;se.classList.toggle("set",!!t);
+    ot.hidden=t!=="__o";if(document.activeElement!==ot)ot.value=v.o[k]||"";
+    const taken=v.t.filter((x,j)=>j!==k&&x&&x!=="__o");
+    [...se.options].forEach(op=>{if(op.value&&op.value!=="__o")op.disabled=taken.includes(op.value)});
+    sl.querySelector(".pv").textContent=t==="__o"?(v.o[k]||""):t;
+   });
+   if(ok)sd++;
+  });
+  tot+=s[1].length;done+=sd;
+  const full=sd===s[1].length;if(full)secs++;
+  el.classList.toggle("full",full);el.querySelector("small").textContent=`${sd}/${s[1].length}`;
+ });
+ const p=Math.round(done/tot*100);
+ document.getElementById("pct").textContent=p+"%";
+ document.getElementById("cnt").textContent=`${done} de ${tot} itens`;
+ document.getElementById("sec").textContent=`${secs} de ${D.length} blocos completos`;
+ document.getElementById("fill").setAttribute("width",610*done/tot);
+ const g=Math.min(4,Math.floor(p/25));
+ grausG.innerHTML=Array.from({length:4},(_,k)=>`<rect x="${628+k*30}" y="20" width="14" height="50" fill="#fff" opacity="${k<g?1:.12}"/>`).join("");
+ document.body.classList.toggle("all",done===tot);
+}
+function toggle(row,pip){
+ const it=find(row.dataset.id),c=n(it),v=st(it);
+ while(v.c.length<c)v.c.push(false);v.c=v.c.slice(0,c);
+ if(pip){const k=+pip.dataset.k;v.c[k]=!v.c[k]}
+ else{const all=v.c.every(Boolean);v.c=v.c.map(()=>!all)}
+ save();render();
+}
+list.addEventListener("click",e=>{if(e.target.closest("select,input"))return;const row=e.target.closest(".item");if(!row)return;toggle(row,e.target.closest(".pip"))});
+list.addEventListener("keydown",e=>{if((e.key===" "||e.key==="Enter")&&e.target.classList.contains("item")){e.preventDefault();toggle(e.target,null)}});
+list.addEventListener("change",e=>{if(e.target.tagName!=="SELECT")return;const it=find(e.target.closest(".item").dataset.id),v=st(it),k=+e.target.dataset.k;v.t[k]=e.target.value;save();render();if(e.target.value==="__o")e.target.parentNode.querySelector(".oth").focus()});
+list.addEventListener("input",e=>{if(!e.target.classList.contains("oth"))return;const it=find(e.target.closest(".item").dataset.id),v=st(it),k=+e.target.dataset.k;v.o[k]=e.target.value;save();e.target.parentNode.querySelector(".pv").textContent=e.target.value});
+const fDone=document.getElementById("fDone"),fBlank=document.getElementById("fBlank");
+fDone.onclick=()=>{const on=fDone.getAttribute("aria-pressed")!=="true";fDone.setAttribute("aria-pressed",on);document.body.classList.toggle("hide-done",on)};
+fBlank.onclick=()=>{const on=fBlank.getAttribute("aria-pressed")!=="true";fBlank.setAttribute("aria-pressed",on);document.body.classList.toggle("blank",on)};
+const dlg=document.getElementById("dlg");
+document.getElementById("reset").onclick=()=>dlg.classList.add("open");
+document.getElementById("no").onclick=()=>dlg.classList.remove("open");
+document.getElementById("yes").onclick=()=>{S={};save();render();dlg.classList.remove("open")};
+render();
+}
+</script>
+</body>
+</html>
